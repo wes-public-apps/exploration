@@ -10,42 +10,33 @@ class Rotation(Enum):
     two_seventy = 3
 
 class Tetromino:
-    def __init__(self, rotations):
+    def __init__(self, rotations, num_rotations=C.NUM_ROTATIONS):
         self._current_rotation = Rotation.original
         self._rotations: List[int] = rotations
         self._moved = False
+        self._num_rotations = num_rotations
 
-    def fast_rotate(self, grid: List[bool]) -> List[int]:
+    def rotate(self, grid: List[bool]) -> bool:
         """Complete the rotation logic for this tetromino. If the resulting rotation is illegal
-        then complete the necessary corrections.
+        then ignore.
         Returns:
-            List[int]: List of positions representing the current block on the grid.
+            bool: True if rotation successful. False otherwise.
         """        
-        self._current_rotation = (self._current_rotation + 1) % C.SHAPE_BLOCK_COUNT
-        return self.kick(grid)
-    
-    def kick(self, grid: List[bool]) -> List[int]:
-        """Correct the post rotation shape when it overlaps with an occupied space.
-        Args:
-            grid (List[bool]): 1D array representing the tetris game state.
-        Returns:
-            List[int]: Modified position of the current rotation.
-        """        
-        # TODO: validate rotation is legal. if not complete wall kick.
-        # check if position is in bounds
-        # check if position overlaps with existing point
-        rotation = self.get_current_rotation()
-        if all((p<0 or p>len(grid) or grid[p] for p in rotation)):
-            return rotation
+        temp_rotation = (self._current_rotation + 1) % self._num_rotations
+        temp_rotation_shape = self.get_rotation(temp_rotation)
+        if any((p<0 or p>len(grid) or grid[p] for p in temp_rotation_shape)):
+            return False
+        else:
+            self._current_rotation = temp_rotation
+            return True
 
-    
-    def get_current_rotation(self) -> List[int]:
+    def get_rotation(self, rotation) -> List[int]:
         """Gets the slice of the 1D array intended to track the current rotation.
         Returns:
             List[int]: List of positions representing the current block on the grid.
         """        
-        start_ind = self._current_rotation * C.SHAPE_BLOCK_COUNT
-        return self._rotations[start_ind:start_ind + C.SHAPE_BLOCK_COUNT]
+        start_ind = rotation * C.NUM_ROTATIONS
+        return self._rotations[start_ind:start_ind + C.NUM_BLOCKS]
 
     def translate_left(self, grid: List[bool]) -> bool:
         """Moves the tetromino to the left one block unless the block is obstructed
@@ -54,7 +45,7 @@ class Tetromino:
         Returns:
             bool: True if moved. False otherwise.
         """        
-        rotation = self.get_current_rotation()
+        rotation = self.get_rotation(self._current_rotation)
         # check if against left wall
         if any((p%C.GRID_COLUMN_COUNT==0 for p in rotation)):
             return False
@@ -72,7 +63,7 @@ class Tetromino:
         Returns:
             bool: True if moved. False otherwise.
         """        
-        rotation = self.get_current_rotation()
+        rotation = self.get_rotation(self._current_rotation)
         # check if against right wall
         if any((p+1%C.GRID_COLUMN_COUNT==0 for p in rotation)):
             return False
@@ -90,7 +81,7 @@ class Tetromino:
         Returns:
             bool: True if moved. False otherwise.
         """        
-        rotation = self.get_current_rotation()
+        rotation = self.get_rotation(self._current_rotation)
         # check if against top
         if any((p+C.GRID_COLUMN_COUNT>=len(grid) for p in rotation)):
             return False
@@ -108,7 +99,7 @@ class Tetromino:
         Returns:
             bool: True if moved. False otherwise.
         """        
-        rotation = self.get_current_rotation()
+        rotation = self.get_rotation(self._current_rotation)
         # check if against bottom
         if any((p-C.GRID_COLUMN_COUNT<0 for p in rotation)):
             return False
@@ -125,31 +116,67 @@ class Tetromino:
 
 class IShape(Tetromino):
     def __init__(self):
+        ref = C.SPAWN_POINT
         rotations = [
-            193, 194, 195, 196,  # rot 0
-            205, 195, 185, 175,  # rot 90
-            183, 184, 185, 186,  # rot 180
-            204, 194, 184, 174   # rot 270
+            ref-2, ref-1, ref, ref+1,  # rot 0
+            ref+C.ROFFSETS[0], ref, ref-C.ROFFSETS[0], ref-C.ROFFSETS[1],  # rot 90
         ]
-        super().__init__(rotations)
+        super().__init__(rotations, num_rotations=2)
 
-    def rotate(self):
-        pass
 
 class OShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.SPAWN_POINT
+        rotations = [ref-1, ref, ref-1-C.ROFFSETS[0], ref-C.ROFFSETS[0]]
+        super().__init__(rotations, num_rotations=1)
 
 class JShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.GRID_COLUMN_COUNT * C.GRID_ROW_COUNT - int(C.GRID_COLUMN_COUNT / 2) + 1  # # Row 20 Col 6
+        rotations = [
+            ref-1, ref, ref+1, ref+1-C.ROFFSETS[0],  # rot 0
+            ref-C.ROFFSETS[0], ref, ref+C.ROFFSETS[0], ref+C.ROFFSETS[0]+1,  # rot 90
+            ref-1+C.ROFFSETS[0], ref-1, ref, ref+1,  # rot 180
+            ref-1-C.ROFFSETS[0], ref-C.ROFFSETS[0], ref, ref+C.ROFFSETS[0],  # rot 270
+        ]
+        super().__init__(rotations, num_rotations=4)
 
 class LShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.SPAWN_POINT
+        rotations = [
+            ref-1, ref, ref+1, ref+1-C.ROFFSETS[0],  # rot 0
+            ref-C.ROFFSETS[0], ref, ref+C.ROFFSETS[0], ref+1+C.ROFFSETS[0],  # rot 90
+            ref-1, ref, ref+1, ref+1+C.ROFFSETS[0],  # rot 180
+            ref-1+C.ROFFSETS[0], ref+C.ROFFSETS[0], ref, ref-C.ROFFSETS[0],  # rot 270
+        ]
+        super().__init__(rotations, num_rotations=4)
 
 class TShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.SPAWN_POINT
+        rotations = [
+            ref-1, ref, ref+1, ref-C.ROFFSETS[0],  # rot 0
+            ref+C.ROFFSETS[0], ref, ref-C.ROFFSETS[0], ref+1,  # rot 90
+            ref-1, ref, ref+C.ROFFSETS[0], ref+1,  # rot 180
+            ref-1, ref, ref-C.ROFFSETS[0], ref+C.ROFFSETS[0],  # rot 270
+        ]
+        super().__init__(rotations, num_rotations=4)
 
 class SShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.SPAWN_POINT
+        rotations = [
+            ref, ref+1, ref-C.ROFFSETS[0], ref-1-C.ROFFSETS[0],  # rot 0
+            ref+C.ROFFSETS[0], ref, ref+1, ref+1-C.ROFFSETS[0],  # rot 90
+        ]
+        super().__init__(rotations, num_rotations=2)
 
 class ZShape(Tetromino):
-    pass
+    def __init__(self):
+        ref = C.SPAWN_POINT
+        rotations = [
+            ref-1, ref, ref-C.ROFFSETS[0], ref+1-C.ROFFSETS[0],  # rot 0
+            ref, ref-C.ROFFSETS[0], ref+1, ref+1+C.ROFFSETS[1],  # rot 90
+        ]
+        super().__init__(rotations, num_rotations=2)
