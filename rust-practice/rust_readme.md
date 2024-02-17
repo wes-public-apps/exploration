@@ -15,3 +15,6 @@ run "cargo fmt"
 
 # Useful Commands
 "cargo fix" - addresses simple compiler errors
+
+# Documentation
+rustup doc
