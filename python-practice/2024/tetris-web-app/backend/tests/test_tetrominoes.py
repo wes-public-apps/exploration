@@ -5,6 +5,13 @@ from app import tetrominoes
 
 
 class TestTetrominoes(unittest.TestCase):
+    
+    def test_initialization(self):
+        tetro = tetrominoes.IShape()
+        actual_pos = tetro.get_positions(tetro._current_rotation)
+
+
+
     def test_I_rotations(self):
         self.assertTrue(False)
 
