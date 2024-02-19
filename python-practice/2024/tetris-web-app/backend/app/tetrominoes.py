@@ -1,3 +1,4 @@
+import logging
 from typing import List
 
 from app import constants as C
@@ -22,15 +23,15 @@ class Tetromino:
         self.name = name
 
     @property
-    def current_viewed_position(self) -> List[int]:
+    def current_position(self) -> List[int]:
         """Gets the slice of the 1D array intended to track the current rotation.
         Returns:
             List[int]: List of positions representing the current block on the grid.
         """
-        return [map_from_grid(p, 12, 10) for p in self.current_position]
+        return [map_from_grid(p, 12, 10) for p in self.current_raw_position]
 
     @property
-    def current_position(self) -> List[int]:
+    def current_raw_position(self) -> List[int]:
         """Gets the slice of the 1D array intended to track the current rotation.
         Returns:
             List[int]: List of positions representing the current block on the grid.
@@ -46,7 +47,8 @@ class Tetromino:
         target_rotation = (self._current_rotation + 1) % self._num_rotations
         target_position = self.get_rotation_position(target_rotation)
         # check if proposed change is allowed
-        if any((self._grid.is_position_not_allowed(p) for p in target_position)):
+        if any((not self._grid.is_position_allowed(p) for p in target_position)):
+            logging.debug("Grid disallowed position: %s", str(target_position))
             return False
         else:
             # execute change
@@ -73,7 +75,7 @@ class Tetromino:
         """
         rotation = self.get_rotation_position(self._current_rotation)
         # check if proposed change is allowed
-        if any((self._grid.is_position_not_allowed(p - 1) for p in rotation)):
+        if any((not self._grid.is_position_allowed(p - 1) for p in rotation)):
             return False
         else:
             # execute translation
@@ -87,7 +89,7 @@ class Tetromino:
         """
         rotation = self.get_rotation_position(self._current_rotation)
         # check if proposed change is allowed
-        if any((self._grid.is_position_not_allowed(p + 1) for p in rotation)):
+        if any((not self._grid.is_position_allowed(p + 1) for p in rotation)):
             return False
         else:
             # execute translation
@@ -103,14 +105,14 @@ class Tetromino:
         # check if proposed change is allowed
         if any(
             (
-                self._grid.is_position_not_allowed(p + self._grid.col_count)
+                not self._grid.is_position_allowed(p + self._grid.raw_col_count)
                 for p in rotation
             )
         ):
             return False
         else:
             # execute translation
-            self._rotations = [p + self._grid.col_count for p in self._rotations]
+            self._rotations = [p + self._grid.raw_col_count for p in self._rotations]
             return True
 
     def translate_down(self) -> bool:
@@ -122,14 +124,14 @@ class Tetromino:
         # check if proposed change is allowed
         if any(
             (
-                self._grid.is_position_not_allowed(p - self._grid.col_count)
+                not self._grid.is_position_allowed(p - self._grid.raw_col_count)
                 for p in rotation
             )
         ):
             return False
         else:
             # execute translation
-            self._rotations = [p - self._grid.col_count for p in self._rotations]
+            self._rotations = [p - self._grid.raw_col_count for p in self._rotations]
             self._moved_down = True
             return True
 
@@ -138,13 +140,11 @@ class Tetromino:
 
     def get_visualization_str(self, rotation: int) -> str:
         print(self._rotations)
-        col_pos = [p % self._grid.col_count for p in self._rotations]
-        row_pos = [int(p / self._grid.col_count) for p in self._rotations]
+        col_pos = [p % self._grid.raw_col_count for p in self._rotations]
+        row_pos = [int(p / self._grid.raw_col_count) for p in self._rotations]
         print(col_pos, row_pos)
         min_col = min(col_pos)
-        max_col = max(col_pos)
         min_row = min(row_pos)
-        max_row = max(row_pos)
         print(min_col, min_row)
         start_ind = rotation * C.NUM_BLOCKS
         rotation_cols = col_pos[start_ind : start_ind + C.NUM_BLOCKS]
@@ -166,9 +166,9 @@ class Tetromino:
 
 class IShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
-        roff2 = grid.col_count * 2
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
+        roff2 = grid.raw_col_count * 2
         rotations = [
             ref - 2,
             ref - 1,
@@ -184,16 +184,16 @@ class IShape(Tetromino):
 
 class OShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [ref - 1, ref, ref - 1 - roff, ref - roff]
         super().__init__("O", rotations, grid, num_rotations=1)
 
 
 class JShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [
             ref - 1,
             ref,
@@ -217,8 +217,8 @@ class JShape(Tetromino):
 
 class LShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [
             ref - 1,
             ref,
@@ -242,8 +242,8 @@ class LShape(Tetromino):
 
 class TShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [
             ref - 1,
             ref,
@@ -267,8 +267,8 @@ class TShape(Tetromino):
 
 class SShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [
             ref,
             ref + 1,
@@ -284,8 +284,8 @@ class SShape(Tetromino):
 
 class ZShape(Tetromino):
     def __init__(self, grid: Grid):
-        ref = grid.spawn_point
-        roff = grid.col_count
+        ref = grid.raw_spawn_point
+        roff = grid.raw_col_count
         rotations = [
             ref - 1,
             ref,
