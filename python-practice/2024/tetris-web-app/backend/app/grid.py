@@ -7,17 +7,17 @@ def map_to_grid(index: int, num_src_cols: int, num_dest_cols) -> int:
     assert index >= 0, "Negative indices not supported"
     col = index % num_src_cols
     rows = int(index / num_src_cols)
-    col_offset = (num_dest_cols - num_src_cols) / 2
+    col_offset = int((num_dest_cols - num_src_cols) / 2)
     return rows * num_dest_cols + rows * col_offset * 2 + col_offset + col
 
 
 @lru_cache
 def map_from_grid(index, num_src_cols, num_dest_cols) -> int:
     assert index >= 0, "Negative indices not supported"
-    col = index % num_src_cols
+    col_offset = int((num_src_cols - num_dest_cols) / 2)
+    col = (index % num_src_cols) - col_offset
     rows = int(index / num_src_cols)
-    col_offset = (num_dest_cols - num_src_cols) / 2
-    return rows * num_dest_cols - col_offset + col
+    return rows * num_dest_cols + col
 
 
 @dataclass

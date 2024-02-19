@@ -3,10 +3,11 @@
 
 
 import unittest
+from typing import List
 
 from app import constants as C
 from app import tetrominoes
-from app.grid import Grid
+from app.grid import Grid, map_to_grid
 
 
 class TestOriginalTetrominoes(unittest.TestCase):
@@ -16,10 +17,13 @@ class TestOriginalTetrominoes(unittest.TestCase):
         # fix grid size for testing purposes
         cls.grid = Grid(10, 20, 195)
 
+    def to_raw_pos(self, position) -> List[int]:
+        return [map_to_grid(p, 10, 12) for p in position]
+
     def test_I_initialization(self):
         """validate the I tetromino initializes in the correct location"""
         tetro = tetrominoes.IShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [193, 194, 195, 196]
         self.assertEqual(actual_pos, expected_pos)
@@ -27,7 +31,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_O_inialization(self):
         """validate the O tetromino initializes in the correct location"""
         tetro = tetrominoes.OShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [184, 185, 194, 195]
         expected_pos.sort()
@@ -36,7 +40,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_J_inialization(self):
         """validate the J tetromino initializes in the correct location"""
         tetro = tetrominoes.JShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [186, 194, 195, 196]
         self.assertEqual(actual_pos, expected_pos)
@@ -44,7 +48,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_L_inialization(self):
         """validate the L tetromino initializes in the correct location"""
         tetro = tetrominoes.LShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [184, 194, 195, 196]
         self.assertEqual(actual_pos, expected_pos)
@@ -52,7 +56,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_S_inialization(self):
         """validate the S tetromino initializes in the correct location"""
         tetro = tetrominoes.SShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [184, 185, 195, 196]
         self.assertEqual(actual_pos, expected_pos)
@@ -60,7 +64,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_Z_inialization(self):
         """validate the Z tetromino initializes in the correct location"""
         tetro = tetrominoes.ZShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [185, 186, 194, 195]
         self.assertEqual(actual_pos, expected_pos)
@@ -68,7 +72,7 @@ class TestOriginalTetrominoes(unittest.TestCase):
     def test_T_inialization(self):
         """validate the T tetromino initializes in the correct location"""
         tetro = tetrominoes.TShape(self.grid)
-        actual_pos = tetro.current_position
+        actual_pos = tetro.current_viewed_position
         actual_pos.sort()
         expected_pos = [185, 194, 195, 196]
         self.assertEqual(actual_pos, expected_pos)
@@ -81,18 +85,18 @@ class TestOriginalTetrominoes(unittest.TestCase):
         tetro = tetrominoes.IShape(grid)
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 1)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [75, 85, 95, 105])
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 0)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [93, 94, 95, 96])
         # add an extra rotation to ensure this is cyclical
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 1)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [75, 85, 95, 105])
 
@@ -118,28 +122,28 @@ class TestOriginalTetrominoes(unittest.TestCase):
         tetro = tetrominoes.TShape(grid)
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 1)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [85, 95, 96, 105])
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 2)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [94, 95, 96, 105])
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 3)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [85, 94, 95, 105])
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 0)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [85, 94, 95, 96])
         # add an extra rotation to ensure this is cyclical
         self.assertTrue(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 1)
-        actual = tetro.current_position
+        actual = tetro.current_viewed_position
         actual.sort()
         self.assertEqual(actual, [85, 95, 96, 105])
 
@@ -222,8 +226,6 @@ class TestOriginalTetrominoes(unittest.TestCase):
         tetro._rotations = [
             p + 4 for p in tetro._rotations
         ]  # shift shape all the way to column 9
-        print(tetro.current_position, flush=True)
-        print(tetro._rotations, flush=True)
         self.assertFalse(tetro.rotate())
         self.assertEqual(tetro._current_rotation, 1)
 

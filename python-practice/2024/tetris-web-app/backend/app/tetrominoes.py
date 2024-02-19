@@ -1,7 +1,7 @@
 from typing import List
 
 from app import constants as C
-from app.grid import Grid, map_to_grid
+from app.grid import Grid, map_from_grid
 
 
 class Tetromino:
@@ -22,6 +22,14 @@ class Tetromino:
         self.name = name
 
     @property
+    def current_viewed_position(self) -> List[int]:
+        """Gets the slice of the 1D array intended to track the current rotation.
+        Returns:
+            List[int]: List of positions representing the current block on the grid.
+        """
+        return [map_from_grid(p, 12, 10) for p in self.current_position]
+
+    @property
     def current_position(self) -> List[int]:
         """Gets the slice of the 1D array intended to track the current rotation.
         Returns:
@@ -38,14 +46,7 @@ class Tetromino:
         target_rotation = (self._current_rotation + 1) % self._num_rotations
         target_position = self.get_rotation_position(target_rotation)
         # check if proposed change is allowed
-        if any(
-            (
-                self._grid.is_position_not_allowed(
-                    map_to_grid(p, self._grid.viewed_col_count, self._grid.col_count)
-                )
-                for p in target_position
-            )
-        ):
+        if any((self._grid.is_position_not_allowed(p) for p in target_position)):
             return False
         else:
             # execute change
@@ -72,15 +73,7 @@ class Tetromino:
         """
         rotation = self.get_rotation_position(self._current_rotation)
         # check if proposed change is allowed
-        if any(
-            (
-                self._grid.is_position_not_allowed(
-                    map_to_grid(p, self._grid.viewed_col_count, self._grid.col_count)
-                    - 1
-                )
-                for p in rotation
-            )
-        ):
+        if any((self._grid.is_position_not_allowed(p - 1) for p in rotation)):
             return False
         else:
             # execute translation
@@ -94,15 +87,7 @@ class Tetromino:
         """
         rotation = self.get_rotation_position(self._current_rotation)
         # check if proposed change is allowed
-        if any(
-            (
-                self._grid.is_position_not_allowed(
-                    map_to_grid(p, self._grid.viewed_col_count, self._grid.col_count)
-                    + 1
-                )
-                for p in rotation
-            )
-        ):
+        if any((self._grid.is_position_not_allowed(p + 1) for p in rotation)):
             return False
         else:
             # execute translation
@@ -118,10 +103,7 @@ class Tetromino:
         # check if proposed change is allowed
         if any(
             (
-                self._grid.is_position_not_allowed(
-                    map_to_grid(p, self._grid.viewed_col_count, self._grid.col_count)
-                    + self._grid.col_count
-                )
+                self._grid.is_position_not_allowed(p + self._grid.col_count)
                 for p in rotation
             )
         ):
@@ -140,10 +122,7 @@ class Tetromino:
         # check if proposed change is allowed
         if any(
             (
-                self._grid.is_position_not_allowed(
-                    map_to_grid(p, self._grid.viewed_col_count, self._grid.col_count)
-                    - self._grid.col_count
-                )
+                self._grid.is_position_not_allowed(p - self._grid.col_count)
                 for p in rotation
             )
         ):
