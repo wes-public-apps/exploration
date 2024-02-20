@@ -14,7 +14,7 @@ wall kicks - rotation is obstructed
 side to side movement
 rotate - spacebar
 soft drop - tap down
-hard drop - hold down
+hard drop - hold down TBD
 
 # Server Driven
 1. time based position update

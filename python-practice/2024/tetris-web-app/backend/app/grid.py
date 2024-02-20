@@ -62,6 +62,27 @@ class Grid:
             self._positions[i * self.raw_col_count] = True
             self._positions[i * self.raw_col_count + self.raw_col_count - 1] = True
 
+    @property
+    def display_str(self) -> str:
+        """Helper method that generates a representation of the grid as a string.
+        Returns:
+            str: grid representation as a string
+        """
+        grid_str = ""
+        for i in range(self.raw_row_count - 1, -1, -1):
+            start = self.raw_col_count * i
+            end = start + self.raw_col_count
+            grid_str += (
+                str(i)
+                + ": "
+                + "".join(["X" if p else "-" for p in self._positions[start:end]])
+            )
+            grid_str += "\n"
+        return grid_str
+
+    def __str__(self) -> str:
+        return self.display_str
+
     def is_position_allowed(self, index: int) -> bool:
         """Checks is the provided raw position is an allowed location by ensuring it is within
         grid bounds and that position is not already occupied.
@@ -93,22 +114,42 @@ class Grid:
         ind = map_to_grid(index, self.col_count, self.raw_col_count)
         return self._positions[ind]
 
-    def get_visualization_str(self) -> str:
-        """Helper method that generates a representation of the grid as a string.
+    def handle_solid_rows(self) -> int:
+        """This function handles detecting, counting, and then removing solid lines.
         Returns:
-            str: grid representation as a string
+            int: solid line count
         """
-        grid_str = ""
-        for i in range(self.raw_row_count - 1, -1, -1):
-            start = self.raw_col_count * i
-            end = start + self.raw_col_count
-            grid_str += (
-                str(i)
-                + ": "
-                + "".join(["X" if p else "-" for p in self._positions[start:end]])
-            )
-            grid_str += "\n"
-        return grid_str
+        rows_to_remove = []
+        solid_count = 0
+
+        # detect solid lines
+        for i in range(1, self.row_count + 1):
+            start = i * self.raw_col_count + 1
+            end = start + self.col_count
+            if all(self._positions[start:end]):
+                solid_count += 1
+                rows_to_remove.append(i)
+            else:
+                pass
+
+        # remove solid lines
+        rows_to_remove.append(self.raw_row_count - 1)
+        for idx, row_id in enumerate(rows_to_remove):
+            row_start = (row_id - idx) * self.raw_col_count
+            for _ in range(self.raw_col_count):
+                del self._positions[row_start]
+
+        # refill removed lines at the top
+        for i in range(-2, -1 * self.raw_col_count, -1):
+            self._positions[i] = False
+        row_template = [False for _ in range(self.raw_col_count)]
+        row_template[0] = True
+        row_template[-1] = True
+        for i in range(solid_count):
+            self._positions.extend(row_template)
+        self._positions.extend([True for _ in range(self.raw_col_count)])
+
+        return solid_count
 
     def __getitem__(self, index) -> bool:
         return self._positions[index]

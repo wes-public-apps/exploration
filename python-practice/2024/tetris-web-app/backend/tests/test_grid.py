@@ -57,12 +57,12 @@ class TestGrid(unittest.TestCase):
         for i in range(1, grid.raw_row_count - 1):
             for j in range(i * 12 + 1, i * 12 + 11):
                 self.assertFalse(grid[j], msg=f"Index: {j}.")
-        logging.debug(grid.get_visualization_str())
+        logging.debug(grid.display_str)
 
     def test_allowed_positions(self):
         """Validates wall boundaries are not allowed positions"""
         grid = Grid(10, 20, 195)
-        logging.debug(f"Initial 10x20: \n%s", grid.get_visualization_str())
+        logging.debug(f"Initial 10x20: \n%s", grid.display_str)
 
         for i in (
             list(range(12))
@@ -79,10 +79,41 @@ class TestGrid(unittest.TestCase):
                 )
 
         grid[105] = True
-        logging.debug(f"Initial 10x20 + 105: \n%s", grid.get_visualization_str())
+        logging.debug(f"Initial 10x20 + 105: \n%s", grid.display_str)
         self.assertFalse(grid.is_position_allowed(105))
         self.assertFalse(grid.is_position_allowed(-1))
         self.assertFalse(grid.is_position_allowed(300))
+
+    def test_handle_solid_rows(self):
+        """validates logic for ensuring grid updates to handle solid rows"""
+        grid = Grid(10, 20, 195)
+
+        # no solid rows
+        orig_position = [p for p in grid._positions]
+        self.assertEqual(grid.handle_solid_rows(), 0, msg=f"\n{grid.display_str}")
+        self.assertEqual(grid._positions, orig_position)
+
+        # single solid row only
+        for i in range(12, 23):
+            grid[i] = True
+        self.assertEqual(grid.handle_solid_rows(), 1, msg=f"\n{grid.display_str}")
+        self.assertEqual(grid._positions, orig_position, msg=f"\n{grid.display_str}")
+
+        # two solid rows only
+        for i in range(12, 35):
+            grid[i] = True
+        self.assertEqual(grid.handle_solid_rows(), 2, msg=f"\n{grid.display_str}")
+        self.assertEqual(grid._positions, orig_position, msg=f"\n{grid.display_str}")
+
+        # one solid row with some blocks above and below
+        for i in range(24, 35):
+            grid[i] = True
+        for i in (15, 18, 37, 38, 46):
+            grid[i] = True
+        self.assertEqual(grid.handle_solid_rows(), 1, msg=f"\n{grid.display_str}")
+        for i in (15, 18, 25, 26, 34):
+            orig_position[i] = True
+        self.assertEqual(grid._positions, orig_position, msg=f"\n{grid.display_str}")
 
 
 if __name__ == "__main__":
